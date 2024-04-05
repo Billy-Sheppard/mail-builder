@@ -16,8 +16,10 @@ use std::{
     hash::{Hash, Hasher},
     io::{self, Write},
     thread,
-    time::{Duration, SystemTime, UNIX_EPOCH},
 };
+
+#[cfg(not(target_arch = "wasm32"))]
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use crate::{
     encoders::{
@@ -106,6 +108,28 @@ impl<'x> From<&'x String> for ContentType<'x> {
 
 thread_local!(static COUNTER: Cell<u64> = Cell::new(0));
 
+
+#[cfg(target_arch = "wasm32")]
+pub fn make_boundary(separator: &str) -> String {
+    let mut s = DefaultHasher::new();
+    "localhost".hash(&mut s);
+    thread::current().id().hash(&mut s);
+    let hash = s.finish();
+
+    format!(
+        "{:x}{}{:x}{}{:x}",
+        0,
+        separator,
+        COUNTER.with(|c| {
+            hash.wrapping_add(c.replace(c.get() + 1))
+                .wrapping_mul(11400714819323198485u64)
+        }),
+        separator,
+        hash,
+    )
+}
+
+#[cfg(not(target_arch = "wasm32"))]
 pub fn make_boundary(separator: &str) -> String {
     let mut s = DefaultHasher::new();
     gethostname::gethostname().hash(&mut s);

@@ -409,7 +409,13 @@ impl<'x> MessageBuilder<'x> {
             output.write_all(b"Message-ID: ")?;
             generate_message_id_header(
                 &mut output,
-                gethostname::gethostname().to_str().unwrap_or("localhost"),
+                {
+                    #[cfg(not(target_arch = "wasm32"))]
+                    { gethostname::gethostname().to_str().unwrap_or("localhost") }
+                
+                    #[cfg(target_arch = "wasm32")]                
+                    { "localhost" }
+                },
             )?;
             output.write_all(b"\r\n")?;
         }

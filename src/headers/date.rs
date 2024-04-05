@@ -9,10 +9,11 @@
  * except according to those terms.
  */
 
-use std::{
-    io::{self, Write},
-    time::SystemTime,
-};
+use std::io::{self, Write};
+
+#[cfg(not(target_arch = "wasm32"))]
+use std::time::SystemTime;
+
 
 pub static DOW: &[&str] = &["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 pub static MONTH: &[&str] = &[
@@ -33,6 +34,14 @@ impl Date {
         Self { date }
     }
 
+    #[cfg(target_arch = "wasm32")]
+    pub fn now() -> Self {
+        Self {
+            date: 0,
+        }
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
     /// Create a new Date header using the current time.
     pub fn now() -> Self {
         Self {
